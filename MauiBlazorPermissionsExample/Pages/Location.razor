@@ -1,0 +1,108 @@
+﻿@page "/location"
+
+@implements IAsyncDisposable
+
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<h1>Location</h1>
+
+@if (_lastReceivedError == GeolocationPositionErrorCode.None)
+{
+    @if (_lastReceivedCoordinates is null)
+    {
+        <p>Determining your precise location...</p>
+    }
+    else
+    {
+        <p><b>Coordinates:</b> @_lastReceivedCoordinates.Latitude, @_lastReceivedCoordinates.Longitude</p>
+        @if (_lastReceivedCoordinates.Altitude is { } altitude)
+        {
+            <p><b>Altitude:</b> @altitude.ToString("0.00") meters above sea level</p>
+        }
+        @if (_lastReceivedCoordinates.Speed is { } speed)
+        {
+            <p><b>Speed:</b> @speed.ToString("0.00") meters per second</p>
+        }
+    }
+}
+else
+{
+    <p>Your location could not be determined</p>
+
+    if (_lastReceivedError == GeolocationPositionErrorCode.PermissionDenied && HasReloaded == true)
+    {
+        <p>You may need to open the settings app to enable precise location access for this app</p>
+    }
+
+    <button @onclick="Reload">Reload</button>
+}
+
+@code {
+    public record GeolocationCoordinates(
+        double Latitude,
+        double Longitude,
+        double? Altitude,
+        double? Speed);
+
+    public enum GeolocationPositionErrorCode
+    {
+        None = 0,
+        PermissionDenied = 1,
+        PositionUnavailable = 2,
+        Timeout = 3,
+    }
+
+    private DotNetObjectReference<Location> _selfReference;
+    private int _geolocationWatchId = -1;
+    private GeolocationCoordinates? _lastReceivedCoordinates;
+    private GeolocationPositionErrorCode _lastReceivedError;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "reloaded")]
+    public bool? HasReloaded { get; set; }
+
+    public Location()
+    {
+        _selfReference = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _geolocationWatchId = await JS.InvokeAsync<int>("startWatchingPosition", _selfReference);
+        }
+    }
+
+    private void Reload()
+    {
+        var reloadedUri = NavigationManager.GetUriWithQueryParameter("reloaded", true);
+        NavigationManager.NavigateTo(reloadedUri, true);
+    }
+
+    [JSInvokable]
+    public void OnPositionUpdated(GeolocationCoordinates coordinates)
+    {
+        _lastReceivedCoordinates = coordinates;
+        _lastReceivedError = GeolocationPositionErrorCode.None;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnPositionError(GeolocationPositionErrorCode errorCode)
+    {
+        _lastReceivedError = errorCode;
+        StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_geolocationWatchId != -1)
+        {
+            await JS.InvokeVoidAsync("stopWatchingPosition", _geolocationWatchId);
+        }
+
+        _selfReference.Dispose();
+    }
+}
