@@ -9,18 +9,18 @@
 
 @if (_lastReceivedError == GeolocationPositionErrorCode.None)
 {
-    @if (_lastReceivedCoordinates is null)
+    if (_lastReceivedCoordinates is null)
     {
         <p>Determining your precise location...</p>
     }
     else
     {
         <p><b>Coordinates:</b> @_lastReceivedCoordinates.Latitude, @_lastReceivedCoordinates.Longitude</p>
-        @if (_lastReceivedCoordinates.Altitude is { } altitude)
+        if (_lastReceivedCoordinates.Altitude is { } altitude)
         {
             <p><b>Altitude:</b> @altitude.ToString("0.00") meters above sea level</p>
         }
-        @if (_lastReceivedCoordinates.Speed is { } speed)
+        if (_lastReceivedCoordinates.Speed is { } speed)
         {
             <p><b>Speed:</b> @speed.ToString("0.00") meters per second</p>
         }

@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.WebView;
-using Microsoft.Web.WebView2.Core;
-using System;
+﻿using MauiBlazorPermissionsExample.Platforms.Windows;
+using Microsoft.AspNetCore.Components.WebView;
 
 namespace MauiBlazorPermissionsExample;
 
@@ -13,17 +12,16 @@ public partial class MainPage
     // decision using the browser's UI, but no such UI is built in to the WebView2 control. This
     // leaves it up to us to decide what to do in these cases.
     //
-    // The implementation below takes a simple approach, allowing all permission requests originating from
+    // One option is to take a simple approach, allowing all permission requests originating from
     // the base URI while denying all requests coming from an unknown source. No action from the user is
     // required. This results in a user experience that matches what one might expect from a typical
     // native Windows app.
     //
-    // However, there are certainly more sophisticated viable approaches here - you could display a custom
-    // content dialog that justifies why the app needs a certain permission. This behavior would match that
-    // exhibited by iOS and Android apps. Keep in mind that this would require you to implement the mechanism
-    // that persists the user's previous app permission decisions and decides when the popup should be displayed.
-
-    private static readonly Uri BaseUri = new("https://0.0.0.0");
+    // Alternatively, you could implement a dialog system that prompts the user when a device permission
+    // is requested. This allows the user to view the details of the request and make a decision for themselves.
+    //
+    // This example includes both implementations. You can switch between them by adding/removing the line in
+    // the .csproj file defining the HANDLE_WEBVIEW2_PERMISSIONS_SILENTLY constant.
 
     private partial void BlazorWebViewInitializing(object? sender, BlazorWebViewInitializingEventArgs e)
     {
@@ -31,14 +29,13 @@ public partial class MainPage
 
     private partial void BlazorWebViewInitialized(object? sender, BlazorWebViewInitializedEventArgs e)
     {
-        e.WebView.CoreWebView2.PermissionRequested += PermissionRequested;
-    }
+        var permissionHandler =
+#if HANDLE_WEBVIEW2_PERMISSIONS_SILENTLY
+            new SilentPermissionRequestHandler();
+#else
+            new DialogPermissionRequestHandler(e.WebView);
+#endif
 
-    private void PermissionRequested(CoreWebView2 sender, CoreWebView2PermissionRequestedEventArgs args)
-    {
-        args.State = Uri.TryCreate(args.Uri, UriKind.RelativeOrAbsolute, out var uri) && BaseUri.IsBaseOf(uri) ?
-            CoreWebView2PermissionState.Allow :
-            CoreWebView2PermissionState.Deny;
-        args.Handled = true;
+        e.WebView.CoreWebView2.PermissionRequested += permissionHandler.OnPermissionRequested;
     }
 }

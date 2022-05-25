@@ -9,15 +9,11 @@
 
 @if (_lastError is not null)
 {
-    <p>
-        Could not start video: @_lastError
-    </p>
+    <p>Could not start video: @_lastError</p>
 
     if (HasReloaded == true)
     {
-        <p>
-            You may need to open the settings app to enable camera access for this app
-        </p>
+        <p>You may need to open the settings app to enable camera access for this app</p>
     }
 
     <button @onclick="Reload">Reload</button>
