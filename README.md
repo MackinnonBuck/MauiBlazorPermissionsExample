@@ -13,6 +13,8 @@ This project demonstrates how to request and manage device permissions in a MAUI
 
 Additional platform-specific permission management code and configuration files live in the `Platforms/` folders.
 
+The rest is fairly standard, with pages in the `Pages/` folder and JavaScript in `wwwroot/js/`.
+
 ## Adding supported device permissions
 
 This example app demonstrates accessing the device's location, camera, and microphone from JavaScript web APIs, but you can easily add more supported permissions to fit the needs of your app. The following sections describe the steps necessary to support additional types of permissions on each platform.
@@ -36,7 +38,7 @@ iOS device permissions are defined by adding entries in `Info.plist` containing 
 ## Other notes
 
 The Windows implementation of this project supports two possible behaviors for permission management:
-* Automatically grant all permissions requests originating from the app origin
-* Display a dialog when previously-ungranted permissions are being requested
+* Automatically grant all permission requests originating from the app origin, denying everything else
+* Display a dialog when previously-ungranted permissions are being requested, allowing the user to decide whether to grant or deny
 
 These two behaviors can be toggled using the `HANDLE_WEBVIEW2_PERMISSIONS_SILENTLY` constant, which is defined in `MauiBlazorPermissionsExample.csproj`.
